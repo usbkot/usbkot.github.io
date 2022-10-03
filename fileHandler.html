@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="AK">
+        <title>File Handling Test</title>
+        <style>
+            :root{
+                box-sizing: border-box;
+                padding: 0;
+                margin:0;
+                font-family: sans-serif;
+
+                --padding: .75em;
+            }
+            *{
+                box-sizing:inherit;
+                font-family: inherit;
+                /* margin: 0; */
+                /* padding: 0; */
+            }
+            body{
+                padding: var(--padding);
+            }
+            .main-container{
+                display:grid;
+                grid-template-columns: 1fr 50%;
+                grid-template-rows: min-content 65% 1fr;
+                border: 1px black solid;
+                border-radius: 16px;
+
+                width: 100%;
+                height: 100vh;
+            }
+            h1{
+                text-decoration: underline;
+                text-decoration-style: wavy;
+                text-decoration-color: orange;
+                text-decoration-thickness: 2px;
+                padding-left: var(--padding);
+            }
+            .drag-drop{
+                border: 1px gray solid;
+            }
+            .drag-drop-dropzone,
+            .drag-drop:hover,
+            .drag-drop:active{
+                border: 3px black dashed;
+                background-color: orange;
+            }
+            .display{
+                width: 100%;
+                height: 100%;
+                object-fit:contain;
+            }
+            .file-input{
+                width: 100%;
+            }
+
+            .file-button{
+                border: 1px orange solid;
+                padding: 1rem;
+                border-radius: 16px;
+                background-color: transparent;
+                font-weight: bold;
+                width: fit-content;
+                height: 3rem;
+            }
+            .file-button:active{
+                border: 3px black dashed;
+                background-color: orange;
+                box-sizing: border-box;
+            }
+            .file-desktop-input{
+                display:none;
+            }
+            .left .drag-drop{
+                flex-grow: 1;
+            }
+
+
+            /*mobile first section starts here*/
+            .main-container{
+            }
+            .top{
+                grid-row:1/2;
+                grid-column: span 2;
+            }
+            .left{
+                grid-row:3/4;
+                display:flex;
+                flex-wrap: wrap;
+                padding: var(--padding);
+            }
+            .right{
+                grid-row:2/3;
+                grid-column: span 2;
+                background-color: orange;
+                overflow: hidden;
+            }
+            .ltop{
+                display: flex;
+                flex-shrink: 1;
+            }
+            .ltop span{
+                margin-top: var(--padding);
+            }
+            /*desktop around 1280px+*/
+            @media screen and (min-width: 76.25em){
+                .top{
+                    grid-column: 1/2;
+                }
+                .left{
+                    grid-column: 1/2;    
+                }
+                .ltop{
+                    grid-row: 2/3;
+                    flex-direction: column;
+                }
+                .upload-form{
+                    display: flex;
+                    flex-direction: column;
+                }
+                .lbottom{
+                    grid-row: 3/4;
+                }
+                .right{
+                    grid-row:1/4;
+                    grid-column: 2/3;  
+                    border-bottom-right-radius: 16px;
+                    border-top-right-radius: 16px;
+                }
+                /*custom element for precise pointers*/
+                @media (pointer:fine){ 
+                    .file-desktop-input{
+                        display: inline-block;
+                        border-width: 3px;
+                    }
+                    #fileDesktopCaption{
+                        margin-left: 2ex;
+                    }
+                    .file-input{
+                        opacity: 0;
+                        width: 0;
+                        height: 0;
+                    }
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="main-container">
+            <div class="top">
+                <h1>My Upload Page</h1>
+            </div>
+            <div class="left lbottom">
+                <div class="drag-drop" id="dragDrop"><h2>or... Drag your image here</h2></div>
+            </div>
+            <div class="left ltop">
+                <h2>Choose your image:</h2>
+                <form class="upload-form">
+                    <span>
+                        <input type="button" class="file-desktop-input file-button" id="fileDesktopInput" value="..."><span id="fileDesktopCaption"></span>
+                    </span>
+                    <input type="file" class="file-input" id="fileInput" accept="image/*">
+                    <span>
+                        <input type="button" class="file-button" id="fileButton" value="Send">
+                        <input type="reset" class="file-button" id="fileReset" value="Reset">
+                    </span>
+                </form>
+            </div>
+            <div class="right"><img class="display" id="display"></div>
+        </div>
+        <script>
+            function renderImage(input){
+                let fr=new FileReader(),
+                    image;
+                fr.readAsDataURL(input);
+                fr.onload=()=>{
+                    display.src=fr.result;
+                    image=fr.result;
+                }
+                return image
+            };
+            fileButton.addEventListener('click',(event)=>{
+                console.log(fileInput.files[0].name);
+                renderImage(fileInput.files[0]);
+            });
+            fileReset.addEventListener('click',(event)=>{
+                display.src="";
+            })
+
+            dragDrop.ondragenter=(e)=>{e.stopPropagation();e.preventDefault();e.target.classList.add('drag-drop-dropzone');};
+            dragDrop.ondragover=(e)=>{e.stopPropagation();e.preventDefault();};
+            dragDrop.ondragleave=(e)=>{e.stopPropagation();e.preventDefault();e.target.classList.remove('drag-drop-dropzone');};
+            dragDrop.addEventListener('drop',(event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+                renderImage(event.dataTransfer.files[0]);
+                event.target.classList.remove('drag-drop-dropzone');
+            });
+
+            window.addEventListener('paste', (event)=>{
+               if(event.clipboardData.items[0].type.includes('image/')) renderImage(event.clipboardData.files[0]);
+               event.preventDefault();
+            });
+
+            fileDesktopInput.addEventListener('click',(event)=>{
+                fileInput.click();
+                    document.querySelector('#fileDesktopCaption').innerText=`${fileInput.files[0].name} size:${(fileInput.files[0].size/1024/1024).toFixed(3)}mb`;
+            })
+            fileReset.addEventListener('click',(event)=>{
+                document.querySelector('#fileDesktopCaption').innerText=``;
+            })
+        </script>
+    </body>
+</html>
