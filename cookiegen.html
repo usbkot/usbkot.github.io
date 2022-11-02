@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="author" content="AK">
+        <title>Creates cookies</title>
+        <style>
+            :root{
+                box-sizing: border-box;
+            }
+
+            body{
+                font-size: 1vw;
+                font-family: Helvetica, Arial,  sans-serif;
+                box-sizing: inherit;
+                height: 97vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: hsl(39, 80%, 90%);
+            }
+            .app{
+                display: flex;
+                flex-wrap: wrap;
+                box-sizing: inherit;
+                justify-content: space-evenly;
+                align-items: stretch;
+
+
+                max-width: 66vw;
+                min-height: 32vw;
+                padding: 1rem;
+
+                background-color: hsl(39, 60%, 5%);
+                position: absolute;
+            }
+            .app::after{
+                content: 'cookie';
+                display: inline-block;
+                position: fixed;
+                bottom: 0vw;
+                font-size: 12vw;
+                right: 0rem;
+                color:hsl(39, 60%, 60%);
+                opacity: 0.6;
+                user-select: none;
+                z-index: -1;
+
+            }
+            .frame{
+                display:inline-block;
+                padding: 1rem;
+            }
+
+            #genFrame{
+                flex-basis: 33.33%;
+                border: 5px solid transparent;
+                border-image: linear-gradient(to bottom right, #b827fc 0%, #2c90fc 25%, #b8fd33 50%, #fec837 75%, #fd1892 100%);
+                border-image-slice: 1;
+            }
+            textarea{
+                resize:none;
+                width: 100%;
+                height: 100%;
+                background-color: hsl(39, 0%, 60%);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app">
+            <div id="genFrame" class="frame">
+                <h1>c00kie generator</h1>
+                <form id="formWhole">
+                    <input type="text" id="cookieName" required><label for="cookieName">Name of the cookie</label><br>
+                    <input type="text" id="cookieInside" required><label for="cookieInside">Content of the cookie</label><br>
+                    <br>
+                    <input type="radio" name="cookieTime" value="none"> <label for="">Session Cookie</label> <br>
+                    <input type="radio" name="cookieTime" value="date"> <input type="datetime-local" name="" id="dateInput"><label for="">UTC Expire Cookie</label><br>
+                    <input type="radio" name="cookieTime" value="time"> <input type="number" id="timeInput" value="3600"><label for="">Max-age Cookie</label><br>
+                    <br>
+                    <input type="text" id="cookiePath" value="/"><label for="cookiePath">Path </label><br>
+                    <input type="checkbox" id="sameSite" name="lax"><label>SameSite Lax </label><br>
+                    <div style="display: none;">
+                        <input type="checkbox"><label>placeholder</label>
+                        <input type="radio" name="safety" value="time"> <label>single choice</label>
+                        <input type="checkbox"><label>placeholder</label>
+                        <input type="checkbox"><label>placeholder</label>
+                    </div>
+                </form>
+            </div>
+            <div id="sendFrame" class="frame">
+                <input type="button" id="cookieAdd" value="Add Cookie" class="buttonAction"><br>
+                <input type="button" id="cookieDelete" value="Delete Cookie" class="buttonAction"><br>
+                <input type="submit" id="submitCookie" value="Send" class="buttonAction"><br>
+            </div>
+            <div id="resFrame" class="frame">
+            <textarea id="cookieOutput" readonly></textarea>
+            </div>
+        </div>
+<script>
+    //cookie object 
+    function newCookie(name, content, additional) {
+        this.name=name,
+        this.content=content,
+        this.additional=additional
+    };
+    //array of all the cookies
+    let cookieArray=[];
+
+    //event listeners
+    document.getElementById('cookieAdd').addEventListener("click", ()=>createCookie("add") );
+    document.getElementById('cookieDelete').addEventListener("click", ()=>createCookie("delete") );
+    document.getElementById('submitCookie').addEventListener("click", ()=>createCookie("send") );
+
+    //clipboard
+    document.getElementById('cookieOutput').addEventListener("contextmenu", ()=>{
+        event.preventDefault();
+        window.confirm('do you want to copy?')? 
+            navigator.clipboard.writeText(document.getElementById("cookieOutput").value) : "";
+    });
+
+    function cookieDuration(){
+        let type=document.forms[0].elements['cookieTime'].value;
+        console.log(type);
+        let additional;
+        switch(type){
+            case 'date':
+                // dateInput.value
+                console.log(`expires=${new Date(dateInput.value).toUTCString()};`);
+                additional= `expires=${new Date(dateInput.value).toUTCString()};`
+                break;
+            case 'time':
+                console.log(`max-age=${timeInput.value};`);
+                additional= `max-age=${timeInput.value};`;
+                break;
+            default:
+                break;
+        }
+        return additional;
+    };
+
+    function cookiePath(){
+        if(cookiePath.value) return ' path='+cookiePath.value+';';
+        else return ' path=/;';
+    };
+    function cookieSameSite(){
+        if(sameSite.checked) return ' SameSite=Lax; ';
+    };
+
+    //on page load loading existing cookies into cookieArray
+    document.addEventListener('DOMContentLoaded',()=>{
+        let result="0";
+        let regexp=/\b("?'?\w+)/g;
+        let cookieString = decodeURI(document.cookie).split('; ');
+
+        cookieString.forEach(cookie=>{
+            cookieArray.push(new newCookie(cookie.split('=')[0],cookie.split('=')[1]));
+        }); 
+        console.log('Existing Cookies:',cookieArray);
+
+
+        //loads the current time into inputs
+        let now=new Date();
+        dateInput.value=`${now=now.toISOString().split('.')[0]}`;
+    });
+
+    //the main function
+    function createCookie(action){
+        let cookieName=document.getElementById("cookieName").value;
+        let cookieID=-1;
+
+        if (action=="send"){ 
+            location.reload();
+            return
+        };
+
+        if (cookieName!=""){
+                cookieArray.forEach((cur,index)=>{
+                    if (cur.name==cookieName) cookieID=index;
+                });
+        } else{
+            console.log('cookie name empty');
+            return
+        };
+        console.log('cookie found at element id:', cookieID);
+
+        if (action=="add"){
+            if (cookieID==-1){
+                    cookieArray.push(new newCookie(cookieName, document.getElementById("cookieInside").value));
+                    cookieID=cookieArray.length-1;
+            } else {
+                    cookieArray[cookieID].content=document.getElementById("cookieInside").value;
+            };
+            if(cookieDuration){
+                cookieArray[cookieID].additional=cookieDuration()+cookiePath();                
+            };
+            if(cookieSameSite){
+                cookieArray[cookieID].additional=cookieSameSite()+cookieArray[cookieID].additional;
+            }
+            document.cookie=`${cookieArray[cookieID].name}=${cookieArray[cookieID].content}; ${cookieArray[cookieID].additional};`;
+            console.log(cookieArray);
+
+        } else if (action=="delete"){
+            if (cookieID==-1){
+                    console.log('cookie with that name not found cant delete');
+                } else{
+                    cookieArray[cookieID].content='';
+                }
+            document.cookie=`${cookieArray[cookieID].name}=${cookieArray[cookieID].content}; max-age=0;`;
+            cookieArray.splice(cookieID, 1);
+            console.log(cookieArray);  
+        }
+        let text=`id| name=content;\r\n`;
+        cookieArray.forEach( (cur, index)=>{
+            text+=`${index} | ${cur.name}=${cur.content}; \r\n`;
+        });
+        document.getElementById("cookieOutput").value=text;
+        console.log("done");
+    }; //createCookie end
+</script>
+    </body>
+</html>
